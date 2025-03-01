@@ -31,6 +31,29 @@ next =  nullptr;
 
 }
 
+class SchoolList {
+
+private:
+
+School* head;
+
+public; 
+
+SchoolList() {
+
+head = nullptr; 
+
+
+}
+
+insertFirst(School) {
+
+
+
+}
+
+}; 
+
 
 
 
