@@ -55,6 +55,51 @@ head = newSchool;
 
 }
 
+void insertLast(School school) {
+
+School* newSchool = new School (school.name, school.address, school.city, school.state, school.county);
+
+if ( head == nullptr ) {
+
+head = newSchool ;
+return;
+
+
+}
+
+
+
+School* temp= head;
+while (temp-> next!= nullptr) {
+
+temp = temp-> next;
+
+}
+
+temp->next = newSchool;
+
+}
+
+
+void dispaly() { 
+
+if ( head != nullptr) {
+while (temp != nullptr) {
+School* temp = head; 
+
+ cout << "Name: " << temp->name << endl;
+ cout << "Address: " << temp->address << endl;
+ cout << "City: " << temp->city << endl;
+ cout << "State: " << temp->state << endl;
+ cout << "County: " << temp->county << endl;
+
+
+
+}
+
+}
+return 0; 
+
 }; 
 
 
