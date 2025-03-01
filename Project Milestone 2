@@ -15,9 +15,6 @@ string county;
 
 School* next;
 
-
-}
-
 School(string name, string address, string city, string state, string county) {
 
 this -> name = name;
@@ -29,6 +26,10 @@ this -> county = county;
 next =  nullptr;
 
 
+};
+
+
+
 }
 
 class SchoolList {
@@ -37,7 +38,7 @@ private:
 
 School* head;
 
-public; 
+public:
 
 SchoolList() {
 
@@ -46,9 +47,11 @@ head = nullptr;
 
 }
 
-insertFirst(School) {
+void insertFirst(School school) {
 
-
+School* newSchool = new School (school.name, school.address, school.city, school.state, school.county);
+newSchool -> next = head;
+head = newSchool;
 
 }
 
