@@ -6,7 +6,7 @@ using namespace std;
 
 struct School {
 
-public: 
+public:
 string name;
 string address;
 string city;
@@ -28,9 +28,32 @@ next =  nullptr;
 
 }
 
+ class CSVReader {
+public:
+ static vector<vector<string>> readCSV(const string& filename) {
+  ifstream file(filename);
+  vector<vector<string>> data;
+  string line, word;
 
+  if (!file.is_open()) {
+   cerr << "Error: Could not open file " << filename << endl;
+   return data;
+  }
 
-}
+  while (getline(file, line)) {
+   stringstream ss(line);
+   vector<string> row;
+   while (getline(ss, word, ',')) {
+    row.push_back(word);
+   }
+   data.push_back(row);
+  }
+  file.close();
+  return data;
+ }
+};
+
+};
 
 class SchoolList {
 
@@ -42,7 +65,7 @@ public:
 
 SchoolList() {
 
-head = nullptr; 
+head = nullptr;
 
 
 }
@@ -81,9 +104,9 @@ temp->next = newSchool;
 }
 
 
-void dispaly() { 
+void display() {
 
-School* temp = head; 
+School* temp = head;
 
 while (temp != nullptr) {
 
@@ -120,14 +143,14 @@ return ;
 School* temp = head;
 School* prev = nullptr;
 
- while (temp && temp->name != name) { 
+ while (temp && temp->name != name) {
         prev = temp;
         temp = temp->next;
     }
 
- if (!temp) return; 
+ if (!temp) return;
 
-prev->next = temp->next;  
+prev->next = temp->next;
     delete temp;
 
 
@@ -141,7 +164,7 @@ while (temp) {
 if (temp -> name == name) {
 
    return true;
- 
+
  }
 
 temp = temp->next;
@@ -154,14 +177,14 @@ return false;
 
 void loadData (string filename) {
 
-vector <vector<string>> data = CSVReader :: readCSV(filename);
+vector <vector<string>> data = School :: CSVReader :: readCSV(filename);
 
 for ( size_t i = 1; i < data.size(); i++) {
 
 if (data[i].size() < 5) continue;
 
 School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
-insertLast(school); 
+insertLast(school);
 
 }
 
@@ -169,32 +192,18 @@ insertLast(school);
 
 }
 
-}; 
-
-
-
-
-class CSVReader {
-public:
-    static vector<vector<string>> readCSV(const string& filename) {
-        ifstream file(filename);
-        vector<vector<string>> data;
-        string line, word;
-
-        if (!file.is_open()) {
-            cerr << "Error: Could not open file " << filename << endl;
-            return data;
-        }
-
-        while (getline(file, line)) {
-            stringstream ss(line);
-            vector<string> row;
-            while (getline(ss, word, ',')) {
-                row.push_back(word);
-            }
-            data.push_back(row);
-        }
-        file.close();
-        return data;
-    }
 };
+
+
+int main() {
+
+ SchoolList schoolList;
+
+ schoolList.loadData("schools.csv");
+
+ schoolList.display();
+
+ return 0;
+
+}
+
