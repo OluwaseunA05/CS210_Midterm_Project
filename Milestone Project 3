@@ -14,6 +14,9 @@ string state;
 string county;
 
 School* next;
+School* left; 
+School* right; 
+
 
 School(string name, string address, string city, string state, string county) {
 
@@ -56,17 +59,48 @@ public:
 };
 
 
-class SchoolBST 
-{
+class SchoolBST {
 
-insert( School school) {
+private:
+School* root;
 
 
+
+School* insert( School*node, School* newSchool) {
+
+if (!node) 
+  return newSchool;
+
+  if (newSchool-> name < node-> name ) 
+   node -> left = insert(node -> left,newSchool);
+
+  return node;
 
 }
 
-deleteByName (string name) {
-
+School* deleteByName (School* node, string name) {
+if (!node) return nullptr;
+        if (name < node->name)
+            node->left = deleteByName(node->left, name);
+        else if (name > node->name)
+            node->right = deleteByName(node->right, name);
+        else {
+            if (!node->left) {
+                School* temp = node->right;
+                delete node;
+                return temp;
+            } else if (!node->right) {
+                School* temp = node->left;
+                delete node;
+                return temp;
+            }
+            School* temp = findMin(node->right);
+            node->name = temp->name;
+            node->address = temp->address;
+            node->city = temp->city;
+            node->state = temp->state;
+            node->county = temp->county;
+            node->right = deleteByName(node->right, temp->name);
 
 
 
