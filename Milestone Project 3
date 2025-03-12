@@ -14,8 +14,9 @@ string state;
 string county;
 
 School* next;
-School* left; 
-School* right; 
+School* left;
+School* right;
+    School* root;
 
 
 School(string name, string address, string city, string state, string county) {
@@ -58,28 +59,30 @@ public:
 
 };
 
-
 class SchoolBST {
-
 private:
-School* root;
+    School* root;  // Declare root here
 
+    School* insert(School* node, School* newSchool) {
+        if (!node) return newSchool;
 
+        if (newSchool->name < node->name)
+            node->left = insert(node->left, newSchool);
+        else
+            node->right = insert(node->right, newSchool);
 
-School* insert( School*node, School* newSchool) {
+        return node;
+    }
 
-if (!node) 
-  return newSchool;
+    School* findMin(School* node) {
+        while (node->left)
+            node = node->left;
+        return node;
+    }
 
-  if (newSchool-> name < node-> name ) 
-   node -> left = insert(node -> left,newSchool);
+    School* deleteByName(School* node, string name) {
+        if (!node) return nullptr;
 
-  return node;
-
-}
-
-School* deleteByName (School* node, string name) {
-if (!node) return nullptr;
         if (name < node->name)
             node->left = deleteByName(node->left, name);
         else if (name > node->name)
@@ -101,54 +104,68 @@ if (!node) return nullptr;
             node->state = temp->state;
             node->county = temp->county;
             node->right = deleteByName(node->right, temp->name);
+        }
+        return node;
+    }
 
+    void displayInOrder(School* node) {
+        if (!node) return;
+        displayInOrder(node->left);
+        cout << "Name: " << node->name << endl;
+        displayInOrder(node->right);
+    }
 
+    void displayPreOrder(School* node) {
+        if (!node) return;
+        cout << "Name: " << node->name << endl;
+        displayPreOrder(node->left);
+        displayPreOrder(node->right);
+    }
 
-}
+    void displayPostOrder(School* node) {
+        if (!node) return;
+        displayPostOrder(node->left);
+        displayPostOrder(node->right);
+        cout << "Name: " << node->name << endl;
+    }
 
+    School* findByName(School* node, string name) {
+        if (!node || node->name == name)
+            return node;
+        if (name < node->name)
+            return findByName(node->left, name);
+        return findByName(node->right, name);
+    }
 
-findByName(string name) {
-School* temp = head;
+public:
+    SchoolBST() : root(nullptr) {}
 
+    void insert(School school) {
+        School* newSchool = new School(school.name, school.address, school.city, school.state, school.county);
+        root = insert(root, newSchool);
+    }
 
+    void deleteByName(string name) {
+        root = deleteByName(root, name);
+    }
 
+    void displayInOrder() {
+        displayInOrder(root);
+    }
 
-}
+    void displayPreOrder() {
+        displayPreOrder(root);
+    }
 
+    void displayPostOrder() {
+        displayPostOrder(root);
+    }
 
-displayInOrder() {
+    School* findByName(string name) {
+        return findByName(root, name);
+    }
+};
 
-
-
-
-
-
-}
-
-
-
-displayPreOrder {
-
-
-
-
-
-
-}
-
-
-
-displayPostOrder {
-
-
-
-
-
-}
-
-
-
-}
 
 class SchoolList {
 
