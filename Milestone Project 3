@@ -304,6 +304,53 @@ insertLast(school);
 
 }
 
+class SchoolHashTable {
+
+private: 
+vector < School > table;
+int capaity;
+
+
+int hashFunction(string key, int tableSize) {
+    int hash = 0;
+    for (char ch : key) {
+        hash += ch;
+    }
+    return hash % tableSize;
+}
+
+public:
+    SchoolHashTable(int size) {
+        capacity = size;
+        table.resize(capacity, nullptr);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
 };
 
 
