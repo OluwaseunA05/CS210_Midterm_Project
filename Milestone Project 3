@@ -2,109 +2,58 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+
 using namespace std;
 
 struct School {
+    string name;
+    string address;
+    string city;
+    string state;
+    string county;
+    School* next;
+    School* left;
+    School* right;
 
-public:
-string name;
-string address;
-string city;
-string state;
-string county;
-
-School* next;
-School* left;
-School* right;
-    School* root;
-
-
-School(string name, string address, string city, string state, string county) {
-
-this -> name = name;
-this -> address = address;
-this -> city = city;
-this -> state = state;
-this -> county = county;
-
-next =  nullptr;
-
-
-}
-
- class CSVReader {
-public:
- static vector<vector<string>> readCSV(const string& filename) {
-  ifstream file(filename);
-  vector<vector<string>> data;
-  string line, word;
-
-  if (!file.is_open()) {
-   cerr << "Error: Could not open file " << filename << endl;
-   return data;
-  }
-
-  while (getline(file, line)) {
-   stringstream ss(line);
-   vector<string> row;
-   while (getline(ss, word, ',')) {
-    row.push_back(word);
-   }
-   data.push_back(row);
-  }
-  file.close();
-  return data;
- }
+    School(string name, string address, string city, string state, string county)
+        : name(name), address(address), city(city), state(state), county(county), next(nullptr), left(nullptr), right(nullptr) {}
 };
 
+class CSVReader {
+public:
+    static vector<vector<string>> readCSV(const string& filename) {
+        ifstream file(filename);
+        vector<vector<string>> data;
+        string line, word;
+
+        if (!file.is_open()) {
+            cerr << "Error: Could not open file " << filename << endl;
+            return data;
+        }
+
+        while (getline(file, line)) {
+            stringstream ss(line);
+            vector<string> row;
+            while (getline(ss, word, ',')) {
+                row.push_back(word);
+            }
+            data.push_back(row);
+        }
+        file.close();
+        return data;
+    }
 };
 
 class SchoolBST {
 private:
-    School* root;  // Declare root here
+    School* root;
 
     School* insert(School* node, School* newSchool) {
         if (!node) return newSchool;
-
         if (newSchool->name < node->name)
             node->left = insert(node->left, newSchool);
         else
             node->right = insert(node->right, newSchool);
-
-        return node;
-    }
-
-    School* findMin(School* node) {
-        while (node->left)
-            node = node->left;
-        return node;
-    }
-
-    School* deleteByName(School* node, string name) {
-        if (!node) return nullptr;
-
-        if (name < node->name)
-            node->left = deleteByName(node->left, name);
-        else if (name > node->name)
-            node->right = deleteByName(node->right, name);
-        else {
-            if (!node->left) {
-                School* temp = node->right;
-                delete node;
-                return temp;
-            } else if (!node->right) {
-                School* temp = node->left;
-                delete node;
-                return temp;
-            }
-            School* temp = findMin(node->right);
-            node->name = temp->name;
-            node->address = temp->address;
-            node->city = temp->city;
-            node->state = temp->state;
-            node->county = temp->county;
-            node->right = deleteByName(node->right, temp->name);
-        }
         return node;
     }
 
@@ -115,28 +64,6 @@ private:
         displayInOrder(node->right);
     }
 
-    void displayPreOrder(School* node) {
-        if (!node) return;
-        cout << "Name: " << node->name << endl;
-        displayPreOrder(node->left);
-        displayPreOrder(node->right);
-    }
-
-    void displayPostOrder(School* node) {
-        if (!node) return;
-        displayPostOrder(node->left);
-        displayPostOrder(node->right);
-        cout << "Name: " << node->name << endl;
-    }
-
-    School* findByName(School* node, string name) {
-        if (!node || node->name == name)
-            return node;
-        if (name < node->name)
-            return findByName(node->left, name);
-        return findByName(node->right, name);
-    }
-
 public:
     SchoolBST() : root(nullptr) {}
 
@@ -145,261 +72,115 @@ public:
         root = insert(root, newSchool);
     }
 
-    void deleteByName(string name) {
-        root = deleteByName(root, name);
-    }
-
     void displayInOrder() {
         displayInOrder(root);
     }
-
-    void displayPreOrder() {
-        displayPreOrder(root);
-    }
-
-    void displayPostOrder() {
-        displayPostOrder(root);
-    }
-
-    School* findByName(string name) {
-        return findByName(root, name);
-    }
 };
 
-
-class SchoolList {
-
-private:
-
-School* head;
-
-public:
-
-SchoolList() {
-
-head = nullptr;
-
-
-}
-
-void insertFirst(School school) {
-
-School* newSchool = new School (school.name, school.address, school.city, school.state, school.county);
-newSchool -> next = head;
-head = newSchool;
-
-}
-
-void insertLast(School school) {
-
-School* newSchool = new School (school.name, school.address, school.city, school.state, school.county);
-
-if ( head == nullptr ) {
-
-head = newSchool ;
-return;
-
-
-}
-
-
-
-School* temp= head;
-while (temp-> next!= nullptr) {
-
-temp = temp-> next;
-
-}
-
-temp->next = newSchool;
-
-}
-
-
-void display() {
-
-School* temp = head;
-
-while (temp != nullptr) {
-
-
- cout << "Name: " << temp->name << endl;
- cout << "Address: " << temp->address << endl;
- cout << "City: " << temp->city << endl;
- cout << "State: " << temp->state << endl;
- cout << "County: " << temp->county << endl;
-
-temp = temp -> next;
-
- }
-
-}
-
-
-void deleteByName(string name) {
-
-if(!head) {
- return;
-
-}
-
-if (head->name == name)  {
-School* temp = head;
-head = head->next;
-delete temp;
-return ;
-
-
-}
-
-School* temp = head;
-School* prev = nullptr;
-
- while (temp && temp->name != name) {
-        prev = temp;
-        temp = temp->next;
-    }
-
- if (!temp) return;
-
-prev->next = temp->next;
-    delete temp;
-
-
-}
-
-
-bool findByName (string name) {
-School* temp = head;
-
-while (temp) {
-if (temp -> name == name) {
-
-   return true;
-
- }
-
-temp = temp->next;
-
-}
-
-return false;
-}
-
-
-void loadData (string filename) {
-
-vector <vector<string>> data = School :: CSVReader :: readCSV(filename);
-
-for ( size_t i = 1; i < data.size(); i++) {
-
-if (data[i].size() < 5) continue;
-
-School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
-insertLast(school);
-
-}
-
-
-
-}
-
 class SchoolHashTable {
+private:
+    vector<School*> table;
+    int capacity;
 
-private: 
-vector < School > table;
-int capaity;
-
-
-int hashFunction(string key, int tableSize) {
-    int hash = 0;
-    for (char ch : key) {
-        hash += ch;
+    int hashFunction(const string& key) {
+        int hash = 0;
+        for (char ch : key) {
+            hash += ch;
+        }
+        return hash % capacity;
     }
-    return hash % tableSize;
-}
 
 public:
-    SchoolHashTable(int size) {
-        capacity = size;
+    SchoolHashTable(int size) : capacity(size) {
         table.resize(capacity, nullptr);
     }
 
-void insert ( School school) {
-
-int index = hashFunction (school.name);
-table[index] = new School (school.name, school.address, school.city , school.satet, school.zipCode);
-
-
-}
-
-void deleteByName(string name) {
-int index = hashFunction(name);
-if ( table [index] != nullptr && table [index} -> name == name) {
- delete table[index];
-            table[index] = nullptr;
-        } else {
-            cout << "School not found!" << endl;
-        }
+    void insert(School school) {
+        int index = hashFunction(school.name);
+        School* newSchool = new School(school.name, school.address, school.city, school.state, school.county);
+        newSchool->next = table[index];
+        table[index] = newSchool;
     }
+
+    void deleteByName(string name) {
+        int index = hashFunction(name);
+        School* temp = table[index];
+        School* prev = nullptr;
+
+        while (temp && temp->name != name) {
+            prev = temp;
+            temp = temp->next;
+        }
+
+        if (!temp) {
+            cout << "School not found!" << endl;
+            return;
+        }
+
+        if (!prev) {
+            table[index] = temp->next;
+        } else {
+            prev->next = temp->next;
+        }
+        delete temp;
+    }
+
     School* findByName(string name) {
         int index = hashFunction(name);
-        if (table[index] != nullptr && table[index]->name == name) {
-            return table[index];
+        School* temp = table[index];
+
+        while (temp) {
+            if (temp->name == name) {
+                return temp;
+            }
+            temp = temp->next;
         }
         return nullptr;
     }
- void display() {
+
+    void display() {
         for (int i = 0; i < capacity; i++) {
             if (table[i] != nullptr) {
-                cout << "Index " << i << ": " << table[i]->name << endl;
+                School* temp = table[i];
+                while (temp) {
+                    cout << "Index " << i << ": " << temp->name << endl;
+                    temp = temp->next;
+                }
             }
-        } 
-
-
-}
-
-
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-}
-
-
-
-
-
-
-
-
-}
-
-
-
-
-
+        }
+    }
 };
 
-
 int main() {
+    SchoolHashTable schoolTable(100);
+    vector<vector<string>> data = CSVReader::readCSV("schools.csv");
+    SchoolBST schoolTree;
 
- SchoolList schoolList;
+    for (size_t i = 1; i < data.size(); i++) {
+        if (data[i].size() < 5) continue;
+        School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
+        schoolTable.insert(school);
+        schoolTree.insert(school);
+    }
 
- schoolList.loadData("schools.csv");
+    schoolTable.display();
+    schoolTree.displayInOrder();
 
- schoolList.display();
+    string searchName;
+    cout << "Enter school name to search: ";
+    cin >> searchName;
+    School* found = schoolTable.findByName(searchName);
+    if (found) {
+        cout << "Found: " << found->name << endl;
+    } else {
+        cout << "School not found." << endl;
+    }
 
- return 0;
+    cout << "Enter school name to delete: ";
+    cin >> searchName;
+    schoolTable.deleteByName(searchName);
 
+    schoolTable.display();
+
+    return 0;
 }
