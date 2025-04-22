@@ -1,0 +1,92 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+#include <list>
+#include <string>
+
+using namespace std;
+
+const int CACHE_SIZE = 10;
+const string FILE_NAME = "world_cities.csv";
+
+struct CacheEntry {
+    string countryCode;
+    string cityName;
+    string population;
+};
+
+unordered_map<string, pair<CacheEntry, list<string>::iterator>> cacheMap;
+list<string> lruQueue;
+
+string makeKey(const string& country, const string& city) {
+    return country + "|" + city;
+}
+
+bool checkCache(const string& key, string& population) {
+    if (cacheMap.find(key) != cacheMap.end()) {
+        // Move accessed item to front
+        lruQueue.erase(cacheMap[key].second);
+        lruQueue.push_front(key);
+        cacheMap[key].second = lruQueue.begin();
+        population = cacheMap[key].first.population;
+        return true;
+    }
+    return false;
+}
+
+void updateCache(const string& key, const CacheEntry& entry) {
+    if (cacheMap.size() == CACHE_SIZE) {
+        string last = lruQueue.back();
+        lruQueue.pop_back();
+        cacheMap.erase(last);
+    }
+    lruQueue.push_front(key);
+    cacheMap[key] = {entry, lruQueue.begin()};
+}
+
+string searchCSV(const string& country, const string& city) {
+    ifstream file(FILE_NAME);
+    if (!file) return "Error: File not found.";
+
+    string line;
+    getline(file, line); // skip header
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string code, name, pop;
+        getline(ss, code, ',');
+        getline(ss, name, ',');
+        getline(ss, pop, ',');
+
+        if (code == country && name == city) {
+            return pop;
+        }
+    }
+    return "Not found";
+}
+
+int main() {
+    while (true) {
+        string country, city;
+        cout << "\nEnter country code (or 'exit'): ";
+        getline(cin, country);
+        if (country == "exit") break;
+        cout << "Enter city name: ";
+        getline(cin, city);
+
+        string key = makeKey(country, city);
+        string population;
+
+        if (checkCache(key, population)) {
+            cout << "[CACHE HIT] Population: " << population << "\n";
+        } else {
+            population = searchCSV(country, city);
+            if (population != "Not found") {
+                updateCache(key, {country, city, population});
+            }
+            cout << "[CSV LOOKUP] Population: " << population << "\n";
+        }
+    }
+
+    return 0;
+}
