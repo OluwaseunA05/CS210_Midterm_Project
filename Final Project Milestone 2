@@ -1,0 +1,7 @@
+class Cache {
+public:
+    virtual bool get(const string& key, string& value) = 0;
+    virtual void put(const string& key, const string& value) = 0;
+    virtual void display() const = 0;
+    virtual ~Cache() {}
+};
