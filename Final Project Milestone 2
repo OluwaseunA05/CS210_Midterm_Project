@@ -5,3 +5,53 @@ public:
     virtual void display() const = 0;
     virtual ~Cache() {}
 };
+
+class LFUCache : public Cache {
+private:
+    struct CacheEntry {
+        string value;
+        int freq;
+        int time; // to break frequency tie
+    };
+
+    unordered_map<string, CacheEntry> cache;
+    int capacity;
+    int timestamp;
+
+public:
+    LFUCache(int size = 10) : capacity(size), timestamp(0) {}
+
+    bool get(const string& key, string& value) override {
+        auto it = cache.find(key);
+        if (it == cache.end()) return false;
+
+        it->second.freq++;
+        it->second.time = ++timestamp;
+        value = it->second.value;
+        return true;
+    }
+
+    void put(const string& key, const string& value) override {
+        timestamp++;
+        if (cache.size() >= capacity && cache.find(key) == cache.end()) {
+            string toRemove;
+            int minFreq = INT_MAX, oldest = INT_MAX;
+            for (auto& [k, entry] : cache) {
+                if (entry.freq < minFreq || (entry.freq == minFreq && entry.time < oldest)) {
+                    toRemove = k;
+                    minFreq = entry.freq;
+                    oldest = entry.time;
+                }
+            }
+            cache.erase(toRemove);
+        }
+        cache[key] = {value, cache[key].freq + 1, timestamp};
+    }
+
+    void display() const override {
+        cout << "\n[LFU Cache Contents]\n";
+        for (const auto& [k, entry] : cache) {
+            cout << k << " : " << entry.value << " | freq: " << entry.freq << "\n";
+        }
+    }
+};
