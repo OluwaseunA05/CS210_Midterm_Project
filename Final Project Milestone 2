@@ -55,3 +55,41 @@ public:
         }
     }
 };
+
+
+class FIFOCache : public Cache {
+private:
+    unordered_map<string, string> cache;
+    queue<string> order;
+    int capacity;
+
+public:
+    FIFOCache(int size = 10) : capacity(size) {}
+
+    bool get(const string& key, string& value) override {
+        if (cache.find(key) == cache.end()) return false;
+        value = cache[key];
+        return true;
+    }
+
+    void put(const string& key, const string& value) override {
+        if (cache.find(key) == cache.end() && cache.size() >= capacity) {
+            string toRemove = order.front();
+            order.pop();
+            cache.erase(toRemove);
+        }
+
+        if (cache.find(key) == cache.end()) {
+            order.push(key);
+        }
+        cache[key] = value;
+    }
+
+    void display() const override {
+        cout << "\n[FIFO Cache Contents]\n";
+        for (auto& [k, v] : cache) {
+            cout << k << " : " << v << "\n";
+        }
+    }
+};
+
