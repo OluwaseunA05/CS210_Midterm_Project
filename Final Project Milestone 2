@@ -128,3 +128,41 @@ public:
         }
     }
 };
+int main() {
+    Cache* cache;
+    string strategy;
+
+    cout << "Choose a cache strategy (lfu, fifo, random): ";
+    cin >> strategy;
+
+    if (strategy == "lfu") cache = new LFUCache();
+    else if (strategy == "fifo") cache = new FIFOCache();
+    else if (strategy == "random") cache = new RandomCache();
+    else {
+        cout << "Invalid strategy!\n";
+        return 1;
+    }
+
+    string city, country, key, population;
+    while (true) {
+        cout << "\nEnter city name and country code (or type 'exit'): ";
+        cin >> city;
+        if (city == "exit") break;
+        cin >> country;
+
+        key = city + "," + country;
+        if (cache->get(key, population)) {
+            cout << "Cache Hit! Population: " << population << endl;
+        } else {
+            cout << "Cache Miss! Enter population: ";
+            cin >> population; // Simulate DB lookup
+            cache->put(key, population);
+        }
+
+        cache->display();
+    }
+
+    delete cache; // Clean up memory
+    return 0;
+}
+
