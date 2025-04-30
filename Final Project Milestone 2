@@ -93,3 +93,38 @@ public:
     }
 };
 
+class RandomCache : public Cache {
+private:
+    unordered_map<string, string> cache;
+    vector<string> keys;
+    int capacity;
+
+public:
+    RandomCache(int size = 10) : capacity(size) {}
+
+    bool get(const string& key, string& value) override {
+        if (cache.find(key) == cache.end()) return false;
+        value = cache[key];
+        return true;
+    }
+
+    void put(const string& key, const string& value) override {
+        if (cache.find(key) == cache.end() && cache.size() >= capacity) {
+            int randIndex = rand() % keys.size();
+            string toRemove = keys[randIndex];
+            cache.erase(toRemove);
+            keys.erase(keys.begin() + randIndex);
+        }
+        if (cache.find(key) == cache.end()) {
+            keys.push_back(key);
+        }
+        cache[key] = value;
+    }
+
+    void display() const override {
+        cout << "\n[Random Cache Contents]\n";
+        for (auto& [k, v] : cache) {
+            cout << k << " : " << v << "\n";
+        }
+    }
+};
