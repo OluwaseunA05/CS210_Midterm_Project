@@ -1,92 +1,248 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <unordered_map>
-#include <list>
-#include <string>
+#include <vector>
+#include <chrono>
+#include <random>
 
 using namespace std;
 
-const int CACHE_SIZE = 10;
-const string FILE_NAME = "world_cities.csv";
+struct School {
+    string name;
+    string address;
+    string city;
+    string state;
+    string county;
+    School* next;
+    School* left;
+    School* right;
 
-struct CacheEntry {
-    string countryCode;
-    string cityName;
-    string population;
+    School(string name, string address, string city, string state, string county)
+        : name(name), address(address), city(city), state(state), county(county), next(nullptr), left(nullptr), right(nullptr) {}
 };
 
-unordered_map<string, pair<CacheEntry, list<string>::iterator>> cacheMap;
-list<string> lruQueue;
+class CSVReader {
+public:
+    static vector<vector<string>> readCSV(const string& filename) {
+        ifstream file(filename);
+        vector<vector<string>> data;
+        string line, word;
 
-string makeKey(const string& country, const string& city) {
-    return country + "|" + city;
-}
+        if (!file.is_open()) {
+            cerr << "Error: Could not open file " << filename << endl;
+            return data;
+        }
 
-bool checkCache(const string& key, string& population) {
-    if (cacheMap.find(key) != cacheMap.end()) {
-        // Move accessed item to front
-        lruQueue.erase(cacheMap[key].second);
-        lruQueue.push_front(key);
-        cacheMap[key].second = lruQueue.begin();
-        population = cacheMap[key].first.population;
-        return true;
+        while (getline(file, line)) {
+            stringstream ss(line);
+            vector<string> row;
+            while (getline(ss, word, ',')) {
+                row.push_back(word);
+            }
+            data.push_back(row);
+        }
+        file.close();
+        return data;
     }
-    return false;
-}
+};
 
-void updateCache(const string& key, const CacheEntry& entry) {
-    if (cacheMap.size() == CACHE_SIZE) {
-        string last = lruQueue.back();
-        lruQueue.pop_back();
-        cacheMap.erase(last);
+class SchoolLinkedList {
+public:
+    School* head;
+    SchoolLinkedList() : head(nullptr) {}
+
+    void insert(School school) {
+        School* newSchool = new School(school.name, school.address, school.city, school.state, school.county);
+        newSchool->next = head;
+        head = newSchool;
     }
-    lruQueue.push_front(key);
-    cacheMap[key] = {entry, lruQueue.begin()};
-}
 
-string searchCSV(const string& country, const string& city) {
-    ifstream file(FILE_NAME);
-    if (!file) return "Error: File not found.";
+    School* findByName(string name) {
+        School* temp = head;
+        while (temp) {
+            if (temp->name == name) return temp;
+            temp = temp->next;
+        }
+        return nullptr;
+    }
 
-    string line;
-    getline(file, line); // skip header
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string code, name, pop;
-        getline(ss, code, ',');
-        getline(ss, name, ',');
-        getline(ss, pop, ',');
-
-        if (code == country && name == city) {
-            return pop;
+    void deleteByName(string name) {
+        School* temp = head;
+        School* prev = nullptr;
+        while (temp) {
+            if (temp->name == name) {
+                if (prev) prev->next = temp->next;
+                else head = temp->next;
+                delete temp;
+                return;
+            }
+            prev = temp;
+            temp = temp->next;
         }
     }
-    return "Not found";
-}
+};
+
+class SchoolBST {
+private:
+    School* root;
+
+    School* insert(School* node, School* newSchool) {
+        if (!node) return newSchool;
+        if (newSchool->name < node->name)
+            node->left = insert(node->left, newSchool);
+        else
+            node->right = insert(node->right, newSchool);
+        return node;
+    }
+
+    School* findByName(School* node, string name) {
+        if (!node) return nullptr;
+        if (node->name == name) return node;
+        if (name < node->name)
+            return findByName(node->left, name);
+        else
+            return findByName(node->right, name);
+    }
+
+public:
+    SchoolBST() : root(nullptr) {}
+
+    void insert(School school) {
+        School* newSchool = new School(school.name, school.address, school.city, school.state, school.county);
+        root = insert(root, newSchool);
+    }
+
+    School* findByName(string name) {
+        return findByName(root, name);
+    }
+};
+
+class SchoolHashTable {
+private:
+    vector<School*> table;
+    int capacity;
+
+    int hashFunction(const string& key) {
+        int hash = 0;
+        for (char ch : key) hash += ch;
+        return hash % capacity;
+    }
+
+public:
+    SchoolHashTable(int size) : capacity(size) {
+        table.resize(capacity, nullptr);
+    }
+
+    void insert(School school) {
+        int index = hashFunction(school.name);
+        School* newSchool = new School(school.name, school.address, school.city, school.state, school.county);
+        newSchool->next = table[index];
+        table[index] = newSchool;
+    }
+
+    School* findByName(string name) {
+        int index = hashFunction(name);
+        School* temp = table[index];
+        while (temp) {
+            if (temp->name == name) return temp;
+            temp = temp->next;
+        }
+        return nullptr;
+    }
+
+    void deleteByName(string name) {
+        int index = hashFunction(name);
+        School* temp = table[index];
+        School* prev = nullptr;
+        while (temp) {
+            if (temp->name == name) {
+                if (prev) prev->next = temp->next;
+                else table[index] = temp->next;
+                delete temp;
+                return;
+            }
+            prev = temp;
+            temp = temp->next;
+        }
+    }
+};
 
 int main() {
-    while (true) {
-        string country, city;
-        cout << "\nEnter country code (or 'exit'): ";
-        getline(cin, country);
-        if (country == "exit") break;
-        cout << "Enter city name: ";
-        getline(cin, city);
+    SchoolHashTable schoolHash(50000);
+    SchoolBST schoolBST;
+    SchoolLinkedList schoolList;
 
-        string key = makeKey(country, city);
-        string population;
+    vector<vector<string>> data = CSVReader::readCSV("USA_Schools.csv");
+    vector<string> names;
 
-        if (checkCache(key, population)) {
-            cout << "[CACHE HIT] Population: " << population << "\n";
-        } else {
-            population = searchCSV(country, city);
-            if (population != "Not found") {
-                updateCache(key, {country, city, population});
-            }
-            cout << "[CSV LOOKUP] Population: " << population << "\n";
-        }
+    cout << "Starting Insertions..." << endl;
+
+    auto start = chrono::high_resolution_clock::now();
+    for (size_t i = 1; i < data.size(); i++) {
+        if (data[i].size() < 5) continue;
+        School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
+        schoolHash.insert(school);
+        names.push_back(data[i][0]);
     }
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedHashInsert = end - start;
+
+    start = chrono::high_resolution_clock::now();
+    for (size_t i = 1; i < data.size(); i++) {
+        if (data[i].size() < 5) continue;
+        School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
+        schoolBST.insert(school);
+    }
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedBSTInsert = end - start;
+
+    start = chrono::high_resolution_clock::now();
+    for (size_t i = 1; i < data.size(); i++) {
+        if (data[i].size() < 5) continue;
+        School school(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]);
+        schoolList.insert(school);
+    }
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedListInsert = end - start;
+
+    cout << "Starting Searches..." << endl;
+
+    start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; i++) schoolHash.findByName(names[i]);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedHashSearch = end - start;
+
+    start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; i++) schoolBST.findByName(names[i]);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedBSTSearch = end - start;
+
+    start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; i++) schoolList.findByName(names[i]);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedListSearch = end - start;
+
+    cout << "Starting Deletions..." << endl;
+
+    start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; i++) schoolHash.deleteByName(names[i]);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedHashDelete = end - start;
+
+    start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; i++) schoolList.deleteByName(names[i]);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsedListDelete = end - start;
+
+    cout << "\nTiming Results (ms):\n";
+    cout << "Hash Insert: " << elapsedHashInsert.count() << endl;
+    cout << "BST Insert: " << elapsedBSTInsert.count() << endl;
+    cout << "List Insert: " << elapsedListInsert.count() << endl;
+    cout << "Hash Search: " << elapsedHashSearch.count() << endl;
+    cout << "BST Search: " << elapsedBSTSearch.count() << endl;
+    cout << "List Search: " << elapsedListSearch.count() << endl;
+    cout << "Hash Delete: " << elapsedHashDelete.count() << endl;
+    cout << "List Delete: " << elapsedListDelete.count() << endl;
 
     return 0;
 }
