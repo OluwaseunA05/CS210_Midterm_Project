@@ -1,0 +1,211 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
+#include <queue>
+#include <memory>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+
+
+struct TrieNode {
+    unordered_map<char, TrieNode*> children;
+    unordered_map<string, string> countryPopulationMap;
+    bool isEndOfWord = false;
+};
+
+class Trie {
+public:
+    Trie() { root = new TrieNode(); }
+
+    void insert(const string& city, const string& countryCode, const string& population) {
+        TrieNode* node = root;
+        for (char ch : city) {
+            ch = tolower(ch);
+            if (!node->children[ch])
+                node->children[ch] = new TrieNode();
+            node = node->children[ch];
+        }
+        node->isEndOfWord = true;
+        node->countryPopulationMap[countryCode] = population;
+    }
+
+    bool search(const string& city, const string& countryCode, string& populationOut) {
+        TrieNode* node = root;
+        for (char ch : city) {
+            ch = tolower(ch);
+            if (!node->children.count(ch))
+                return false;
+            node = node->children[ch];
+        }
+        if (node->isEndOfWord && node->countryPopulationMap.count(countryCode)) {
+            populationOut = node->countryPopulationMap[countryCode];
+            return true;
+        }
+        return false;
+    }
+
+private:
+    TrieNode* root;
+};
+
+
+class Cache {
+public:
+    virtual bool get(const string& key, string& value) = 0;
+    virtual void put(const string& key, const string& value) = 0;
+    virtual ~Cache() {}
+};
+
+
+class FIFOCache : public Cache {
+    unordered_map<string, string> data;
+    queue<string> order;
+    const size_t capacity = 10;
+
+public:
+    bool get(const string& key, string& value) override {
+        if (data.find(key) != data.end()) {
+            value = data[key];
+            return true;
+        }
+        return false;
+    }
+
+    void put(const string& key, const string& value) override {
+        if (data.find(key) == data.end()) {
+            if (order.size() >= capacity) {
+                string oldKey = order.front();
+                order.pop();
+                data.erase(oldKey);
+            }
+            order.push(key);
+        }
+        data[key] = value;
+    }
+};
+
+
+class RandomCache : public Cache {
+    unordered_map<string, string> data;
+    vector<string> keys;
+    const size_t capacity = 10;
+
+public:
+    RandomCache() { srand(time(0)); }
+
+    bool get(const string& key, string& value) override {
+        if (data.find(key) != data.end()) {
+            value = data[key];
+            return true;
+        }
+        return false;
+    }
+
+    void put(const string& key, const string& value) override {
+        if (data.find(key) == data.end()) {
+            if (keys.size() >= capacity) {
+                int idx = rand() % keys.size();
+                data.erase(keys[idx]);
+                keys.erase(keys.begin() + idx);
+            }
+            keys.push_back(key);
+        }
+        data[key] = value;
+    }
+};
+
+
+class LFUCache : public Cache {
+    unordered_map<string, pair<string, int>> data;
+    const size_t capacity = 10;
+
+public:
+    bool get(const string& key, string& value) override {
+        if (data.find(key) != data.end()) {
+            data[key].second++;
+            value = data[key].first;
+            return true;
+        }
+        return false;
+    }
+
+    void put(const string& key, const string& value) override {
+        if (data.size() >= capacity && data.find(key) == data.end()) {
+            string lfuKey;
+            int minFreq = INT_MAX;
+            for (auto& pair : data) {
+                if (pair.second.second < minFreq) {
+                    minFreq = pair.second.second;
+                    lfuKey = pair.first;
+                }
+            }
+            data.erase(lfuKey);
+        }
+        data[key] = {value, 1};
+    }
+};
+
+
+void loadCSVIntoTrie(const string& filename, Trie& trie) {
+    ifstream file(filename);
+    string line;
+    getline(file, line);
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string country, city, population;
+
+        getline(ss, country, ',');
+        getline(ss, city, ',');
+        getline(ss, population, ',');
+
+        trie.insert(city, country, population);
+    }
+}
+
+
+int main() {
+    Trie trie;
+    string strategy, city, countryCode, key, population;
+    unique_ptr<Cache> cache;
+
+    cout << "Choose a cache strategy (lfu, fifo, random): ";
+    cin >> strategy;
+
+    if (strategy == "lfu") cache = make_unique<LFUCache>();
+    else if (strategy == "fifo") cache = make_unique<FIFOCache>();
+    else if (strategy == "random") cache = make_unique<RandomCache>();
+    else {
+        cout << "Invalid strategy!\n";
+        return 1;
+    }
+
+    loadCSVIntoTrie("world_cities.csv", trie);
+    cout << "Trie loaded with city population data.\n";
+
+    while (true) {
+        cout << "\nEnter city name (or 'exit'): ";
+        cin >> city;
+        if (city == "exit") break;
+        cout << "Enter country code: ";
+        cin >> countryCode;
+
+        key = city + "," + countryCode;
+
+        if (cache->get(key, population)) {
+            cout << "Cache HIT! Population: " << population << "\n";
+        } else {
+            if (trie.search(city, countryCode, population)) {
+                cout << "Cache MISS! Trie Lookup: " << population << "\n";
+                cache->put(key, population);
+            } else {
+                cout << "City not found in Trie.\n";
+            }
+        }
+    }
+
+    return 0;
+}
